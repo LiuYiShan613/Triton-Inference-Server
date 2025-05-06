@@ -45,7 +45,7 @@ Use the following `curl` command directly from your host machine:
   # Run the client binary
   $ ./triton_client_q
 
-- Python API:  
+- Python Example:  
   ```python
   get_model_repository_index()
 
