@@ -1,8 +1,52 @@
 # Triton-Inference-Server
+## 🧰 Triton Server & Client Setup 
+This section documents how to start the Triton Inference Server, verify its status, and make inference requests from the client container.
+
+### [1] Start the Triton Server
+
+- Basic server launch with model repository:
+  ```bash
+  docker run --gpus=1 -p8000:8000 -p8001:8001 -p8002:8002 \
+    -v /home/os-iris.ys.liu/test_triton/model_repository:/models \
+    nvcr.io/nvidia/tritonserver:23.05-py3 \
+    tritonserver --model-repository=/models
+- Add shared memory for large model usage:
+  ```bash
+  docker run --gpus all --shm-size=1g --rm \
+  -p8000:8000 -p8001:8001 -p8002:8002 \
+  -v /home/os-iris.ys.liu/test_triton/model_repository:/models \
+  nvcr.io/nvidia/tritonserver:23.05-py3 \
+  tritonserver --model-repository=/models
+- Install model dependencies (e.g. OpenCV, PyTorch) and enable explicit model control:
+  ```bash
+  docker run --gpus all --shm-size=1g --rm \
+  -p8000:8000 -p8001:8001 -p8002:8002 \
+  -v /home/os-iris.ys.liu/test_triton/model_repository:/models \
+  --entrypoint /bin/bash nvcr.io/nvidia/tritonserver:23.05-py3 \
+  -c "pip install --no-cache-dir opencv-python-headless torch torchvision && \
+      tritonserver --model-repository=/models --model-control-mode=explicit"
+
+### [2] Confirm Triton Server is Running
+- Use `curl` to check server readiness:
+  ```bash
+  curl -v localhost:8000/v2/health/ready
+
+### [3] Send Inference Request from Client Container
+- Start the client container (SDK image):
+  ```bash
+  docker run -it --net=host nvcr.io/nvidia/tritonserver:23.05-py3-sdk
+
+### [4] Test Inference Using Built-in Image Client
+- Inside the client container, run the example image inference client:
+  ```bash
+  install/bin/image_client -m densenet_onnx -c 3 -s INCEPTION /workspace/images/mug.jpg
+  
+📝 Docker Notes
+`--rm`: Automatically removes the container when it exits.
+`-v`: Mounts a local host path into the container.
+
 
 ## 🧠 Triton Model Management
-
-
 To manually load or unload models during runtime, make sure the Triton Inference Server is launched with `--model-control-mode=explicit`. This enables explicit model management, allowing dynamic control of models via API or HTTP requests.
 
 ### 🔄 Load Models 
